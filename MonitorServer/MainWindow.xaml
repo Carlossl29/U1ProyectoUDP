@@ -1,0 +1,36 @@
+﻿<Window x:Class="MonitorServer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MonitorServer"
+        xmlns:views="clr-namespace:MonitorServer.Views"
+        xmlns:viewmodels="clr-namespace:MonitorServer.ViewModels"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Window.DataContext>
+        <viewmodels:ServidorViewModel></viewmodels:ServidorViewModel>
+    </Window.DataContext>
+    <Window.Resources>
+        <views:LaboratoriosView x:Key="VistaLaboratorios"></views:LaboratoriosView>
+        <views:ComputadorasView x:Key="VistaComputadoras"></views:ComputadorasView>
+        <views:HistorialView x:Key="VistaHistorial"></views:HistorialView>
+    </Window.Resources>
+    <ContentControl>
+        <ContentControl.Style>
+            <Style TargetType="ContentControl">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Vista}" Value="{x:Static viewmodels:Vistas.Laboratorios}">
+                        <Setter Property="Content" Value="{StaticResource VistaLaboratorios  }" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Vista}" Value="{x:Static viewmodels:Vistas.Computadoras}">
+                        <Setter Property="Content" Value="{StaticResource VistaComputadoras}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Vista}" Value="{x:Static viewmodels:Vistas.Historial}">
+                        <Setter Property="Content" Value="{StaticResource VistaHistorial}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ContentControl.Style>
+    </ContentControl>
+</Window>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MonitorClient/MonitorClient.csproj" Id="b18ede13-1a41-4b2c-adec-2fe3ba2c9ee4" />
+  <Project Path="MonitorServer/MonitorServer.csproj" />
+</Solution>

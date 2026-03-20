@@ -1,0 +1,114 @@
+﻿<UserControl x:Class="MonitorServer.Views.HistorialView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MonitorServer.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>
+
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="35"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#001F3F">
+            <Grid Margin="16,0">
+                <TextBlock Text="Historial de Conexiones"
+                       Foreground="White"
+                       FontSize="17"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Left"/>
+
+                <Button Content="Regresar"
+                        Width="110" Height="30"
+                        Cursor="Hand"
+                        Margin="0,0,10,0"
+                        FontSize="13"
+                        HorizontalAlignment="Right"
+                        Command="{Binding RegresarLaboratoriosCommand}"/>
+            </Grid>
+        </Border>
+
+        <DataGrid Grid.Row="1" HorizontalAlignment="Center"
+              ItemsSource="{Binding Historial}"
+              AutoGenerateColumns="False"
+              CanUserAddRows="False"
+              IsReadOnly="True"
+              GridLinesVisibility="Horizontal"
+              HorizontalGridLinesBrush="#EEEEEE"
+              HeadersVisibility="Column"
+              BorderThickness="0"
+              RowHeaderWidth="0"
+              Background="White"
+              AlternatingRowBackground="#F9FBFF">
+
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background"      Value="#EEF4FF"/>
+                    <Setter Property="Foreground"      Value="#0056D2"/>
+                    <Setter Property="FontWeight"      Value="SemiBold"/>
+                    <Setter Property="FontSize"        Value="13"/>
+                    <Setter Property="Padding"         Value="12,8"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    <Setter Property="BorderBrush"     Value="#C5D8F6"/>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Height"   Value="34"/>
+                </Style>
+            </DataGrid.RowStyle>
+
+
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Laboratorio"
+                                Binding="{Binding Laboratorio}"
+                                Width="*"/>
+                <DataGridTextColumn Header="Nombre"
+                                Binding="{Binding Nombre}"
+                                Width="*"/>
+                <DataGridTextColumn Header="IP"
+                                Binding="{Binding IP}"
+                                Width="*"/>
+                <DataGridTextColumn Header="Ultima Conexion"
+                                Binding="{Binding UltimaConexion}"
+                                Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="1"
+               Text="Aun no se han registrado conexiones. Presiona Descubrir en la ventana principal."
+               FontSize="13"
+               Foreground="#999999"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               TextWrapping="Wrap"
+               Margin="30,0">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Historial.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <Border Grid.Row="2" Background="#001F3F">
+            <TextBlock Foreground="White" FontSize="12" VerticalAlignment="Center" Padding="10,0,0,0">
+                <Run Text="Total de equipos registrados: "/>
+                <Run Text="{Binding Historial.Count, Mode=OneWay}"/>
+            </TextBlock>
+        </Border>
+    </Grid>
+</UserControl>
