@@ -79,13 +79,13 @@ namespace MonitorServer.Services
                                 Computadoras.Add(computadora);
                             }
                             ActualizarTablero?.Invoke();
-                            EnviarComando("CONECTADO", destino);
+                            //EnviarComando("CONECTADO", destino);
                         }
 
                     }
                     if (comandoSeparado[0] == "ESTADO" && comandoSeparado.Length > 1 && !string.IsNullOrWhiteSpace(comandoSeparado[1]) && !string.IsNullOrWhiteSpace(comandoSeparado[2]) && !string.IsNullOrWhiteSpace(comandoSeparado[3]))
                     {
-                        if (Computadoras.Any(x => x.Laboratorio == comandoSeparado[1] && x.Nombre == comandoSeparado[2] && x.IP == clientEP.Address.ToString() && x.Conectado != false))
+                        if (Computadoras.Any(x => x.Laboratorio == comandoSeparado[1] && x.Nombre == comandoSeparado[2] && x.IP == clientEP.Address.ToString()))
                         {
                             var c = Computadoras.Where(x => x.Laboratorio == comandoSeparado[1] && x.Nombre == comandoSeparado[2] && x.IP == clientEP.Address.ToString()).FirstOrDefault();
                             if (c != null)
@@ -94,6 +94,21 @@ namespace MonitorServer.Services
                                 c.Encendida = true;
                                 c.TieneInternet = bool.Parse(comandoSeparado[3]);
                                 c.UltimaConexion = DateTime.Now; //probablemente este sea el que hay que dejar
+                                ActualizarTablero?.Invoke();
+                            }
+                        }
+                    }
+                    if (comandoSeparado[0] == "APAGADO" && comandoSeparado.Length > 1 && !string.IsNullOrWhiteSpace(comandoSeparado[1]) && !string.IsNullOrWhiteSpace(comandoSeparado[2]))
+                    {
+                        if (Computadoras.Any(x => x.Laboratorio == comandoSeparado[1] && x.Nombre == comandoSeparado[2] && x.IP == clientEP.Address.ToString()))
+                        {
+                            var c = Computadoras.Where(x => x.Laboratorio == comandoSeparado[1] && x.Nombre == comandoSeparado[2] && x.IP == clientEP.Address.ToString()).FirstOrDefault();
+                            if (c != null)
+                            {
+                                c.Conectado = false;
+                                c.Encendida = false;
+                                c.TieneInternet = false;
+                                c.UltimaConexion = DateTime.Now; //no sé si dejarlo para el apagado
                                 ActualizarTablero?.Invoke();
                             }
                         }
@@ -154,9 +169,23 @@ namespace MonitorServer.Services
             var pc = Computadoras.Where(x => x.Laboratorio == c.Laboratorio && x.Nombre == c.Nombre && x.IP == c.IP).FirstOrDefault();
             if (pc != null)
             {
-                pc.Encendida = false;
-                pc.TieneInternet = false;
+                //pc.Encendida = false;
+                //pc.TieneInternet = false;
                 EnviarComando("APAGAR", cliente);
+                ActualizarTablero?.Invoke();
+            }
+        }
+
+        public void EliminarComputadoraHistorial(ComputadoraHistorialModel c)
+        {
+            var pc = Computadoras.Where(x => x.Laboratorio == c.Laboratorio && x.Nombre == c.Nombre && x.IP == c.IP && x.UltimaConexion <= DateTime.Now.AddDays(-7)).FirstOrDefault();
+            if (pc != null)
+            {
+                lock (Computadoras)
+                {
+                    Computadoras.Remove(pc);
+                }
+                GuardarHistorialJSON();
                 ActualizarTablero?.Invoke();
             }
         }
@@ -165,17 +194,21 @@ namespace MonitorServer.Services
         {
             foreach (var computadora in Computadoras)
             {
-                if (computadora.Conectado == false)
-                {
-                    IPEndPoint cliente = new IPEndPoint(IPAddress.Parse(computadora.IP), computadora.Puerto);
-                    EnviarComando("DESCUBRIR", cliente);
-                }
-                else
-                {
-                    computadora.TieneInternet = false;
-                    computadora.Encendida = false;
-                    ComprobarEstado(computadora);
-                }
+                //if (computadora.Conectado == false)
+                //{
+                //    IPEndPoint cliente = new IPEndPoint(IPAddress.Parse(computadora.IP), computadora.Puerto);
+                //    EnviarComando("DESCUBRIR", cliente);
+                //}
+                //else
+                //{
+                //    computadora.TieneInternet = false;
+                //    computadora.Encendida = false;
+                //    ComprobarEstado(computadora);
+                //}
+
+                computadora.TieneInternet = false;
+                computadora.Encendida = false;
+                ComprobarEstado(computadora);
             }
 
             Thread hiloActualizar = new Thread(() =>
@@ -189,7 +222,7 @@ namespace MonitorServer.Services
 
         public void DescubrirComputadoras()
         {
-            IPEndPoint broadcast = new IPEndPoint(IPAddress.Broadcast, 8888);
+            IPEndPoint broadcast = new IPEndPoint(IPAddress.Broadcast, 8888);  //aqui me quede
             var comando = "DESCUBRIR";
             byte[] buffer = Encoding.UTF8.GetBytes(comando);
             Server.Send(buffer, buffer.Length, broadcast);
@@ -197,7 +230,7 @@ namespace MonitorServer.Services
 
         public IEnumerable<ComputadoraModel> GetHistorial()
         {
-            return Computadoras.Where(x => x.Conectado == false);
+            return Computadoras.Where(x => x.UltimaConexion <= DateTime.Now.AddDays(-7));
         }
 
         public void LeerHistorialJSON()
@@ -212,6 +245,7 @@ namespace MonitorServer.Services
                     {
                         pc.Conectado = false;
                         pc.Encendida = false;
+                        pc.TieneInternet = false;
                     }
                     Computadoras = computadoras;
                 }

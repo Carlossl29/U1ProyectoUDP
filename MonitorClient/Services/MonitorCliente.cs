@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -19,13 +20,22 @@ namespace MonitorClient.Services
 
         int puertoServer = 7777;
 
-        public void Conectar(IPAddress ipServer, string identificador)
+        public event Action? ContadorIniciado;
+        public event Action<string>? ClienteEscuchando;
+
+        //public MonitorCliente()
+        //{
+        //    CargarIdentificador();
+        //}
+
+        public void Conectar(string identificador)
         {
             identificador = identificador.Replace('|', '\0');
             var idSeparado = identificador.Split("-");
             bool internet = TieneInternet();
 
-            IPEndPoint remoto = new IPEndPoint(ipServer, puertoServer);
+            //IPEndPoint remoto = new IPEndPoint(ipServer, puertoServer);
+            IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
             var comando = $"CONECTAR|{idSeparado[0].ToUpper()}|{idSeparado[1].ToUpper()}|{internet}";
             byte[] buffer = Encoding.UTF8.GetBytes(comando);
 
@@ -33,7 +43,15 @@ namespace MonitorClient.Services
 
             IpServidor = remoto.Address;
 
-            Identificador = identificador;
+            if (string.IsNullOrWhiteSpace(Identificador))
+            {
+                Identificador = identificador;
+                GuardarIdentificador();
+            }
+            else
+            {
+                ClienteEscuchando?.Invoke(Identificador);
+            }
 
             Thread hilo = new(RecibirComandos);
             hilo.IsBackground = true;
@@ -62,7 +80,7 @@ namespace MonitorClient.Services
                     }
                     if (comando == "APAGAR")
                     {
-                        ApagarPC();
+                        ContadorIniciado?.Invoke();
                     }
                 }
                 catch (Exception ex)
@@ -86,10 +104,20 @@ namespace MonitorClient.Services
             }
         }
 
-        private void ApagarPC()
+        public void ApagarPC()
         {
             try
             {
+                if (Identificador != null)
+                {
+                    var idSeparado = Identificador.Split("-");
+                    IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
+                    var comando = $"APAGADO|{idSeparado[0].ToUpper()}|{idSeparado[1].ToUpper()}";
+                    byte[] buffer = Encoding.UTF8.GetBytes(comando);
+
+                    Cliente.Send(buffer, buffer.Length, remoto);
+                }
+
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "shutdown",
@@ -101,6 +129,37 @@ namespace MonitorClient.Services
             catch (Exception ex)
             {
                 Console.WriteLine("Error al apagar: " + ex.Message);
+            }
+        }
+
+        public void GuardarIdentificador()
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(Identificador))
+                {
+                    File.WriteAllText("identificador.json", Identificador);
+                }
+            }
+            catch
+            {
+
+            }
+        }
+
+        public void CargarIdentificador()
+        {
+            try
+            {
+                if (File.Exists("identificador.json"))
+                {
+                    Identificador = File.ReadAllText("identificador.json");
+                    Conectar(Identificador);
+                }
+            }
+            catch
+            {
+
             }
         }
     }

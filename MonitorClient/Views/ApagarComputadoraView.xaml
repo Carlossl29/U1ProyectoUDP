@@ -1,0 +1,114 @@
+﻿<UserControl x:Class="MonitorClient.Views.ApagarComputadoraView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MonitorClient.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="35"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#001F3F" Padding="15">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock Text="&#xE7E8;"
+                           FontFamily="Segoe MDL2 Assets"
+                           Foreground="White"
+                           FontSize="20"
+                           Margin="0,0,10,0"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Text="Apagado Remoto del Equipo"
+                           Foreground="White"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="30,30" HorizontalAlignment="Center">
+
+            <TextBlock Text="⚠"
+                       FontSize="50"
+                       Foreground="#F97316"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="El encargado ha solicitado apagar este equipo."
+                       FontSize="15"
+                       Foreground="#333"
+                       TextAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,15">
+
+                <TextBlock Text="Apagando en "
+                           FontSize="16"
+                           Foreground="#333"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Text="{Binding ContadorApagado}"
+                           FontSize="26"
+                           FontWeight="Bold"
+                           Foreground="#F97316"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Text=" segundos"
+                           FontSize="16"
+                           Foreground="#333"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <ProgressBar Maximum="10"
+                         Value="{Binding ContadorApagado}"
+                         Height="8"
+                         Width="300"
+                         Background="#E5E7EB"
+                         Foreground="#F97316"
+                         BorderThickness="0"
+                         Margin="0,0,0,25"/>
+
+            <Button Content="Cancelar Apagado"
+                    Command="{Binding CancelarApagarComputadoraCommand}"
+                    Width="220"
+                    Height="40"
+                    FontSize="15"
+                    Cursor="Hand">
+
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#0072C6"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#003F73"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+        </StackPanel>
+
+        <Border Grid.Row="2" Background="#001F3F">
+            <TextBlock Text="Apagado"
+                       Foreground="White"
+                       FontSize="12"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+    </Grid>
+</UserControl>

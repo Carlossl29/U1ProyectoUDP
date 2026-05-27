@@ -29,7 +29,11 @@ namespace MonitorServer.ViewModels
             ComprobarEstadoTodasCommand = new RelayCommand(ComprobarEstadoTodas);
             DescubrirComputadorasCommand = new RelayCommand(DescubrirComputadoras);
             VerHistorialCommand = new RelayCommand(VerHistorial);
+            VerEliminarComputadoraHistorialCommand = new RelayCommand(VerEliminarComputadoraHistorial);
+            EliminarComputadoraHistorialCommand = new RelayCommand(EliminarComputadoraHistorial);
+            CancelarEliminarCommand = new RelayCommand(CancelarEliminar);
             servidor.ActualizarTablero += Servidor_ActualizarTablero;
+            Servidor_ActualizarTablero();
         }
 
         private MonitorServidor servidor = new MonitorServidor();
@@ -44,12 +48,17 @@ namespace MonitorServer.ViewModels
         public ICommand ComprobarEstadoTodasCommand { get; set; }
         public ICommand VerHistorialCommand { get; set; }
         public ICommand DescubrirComputadorasCommand { get; set; }
+        public ICommand VerEliminarComputadoraHistorialCommand { get; set; }
+        public ICommand EliminarComputadoraHistorialCommand { get; set; }
+        public ICommand CancelarEliminarCommand { get; set; }
         public Vistas Vista { get; set; }
         public string? LaboratorioSeleccionado { get; set; }
         private List<ComputadoraModel> ListaComputadoras { get; set; } = new List<ComputadoraModel>();
         public ObservableCollection<LaboratorioModel> Laboratorios { get; set; } = new ObservableCollection<LaboratorioModel>();
         public ObservableCollection<ComputadoraModel> Computadoras { get; set; } = new ObservableCollection<ComputadoraModel>();
         public ObservableCollection<ComputadoraHistorialModel> Historial { get; set; } = new ObservableCollection<ComputadoraHistorialModel>();
+        public ComputadoraHistorialModel? ComputadoraEliminar { get; set; }
+        public bool Eliminar { get; set; } = false;
 
         private void Servidor_ActualizarTablero()
         {
@@ -61,6 +70,31 @@ namespace MonitorServer.ViewModels
                 ActualizarComputadoras();
                 ActualizarHistorial();
             });
+        }
+
+        private void CancelarEliminar()
+        {
+            ComputadoraEliminar = null;
+            Eliminar = false;
+            OnPropertyChanged(nameof(ComputadoraEliminar));
+            OnPropertyChanged(nameof(Eliminar));
+        }
+        private void EliminarComputadoraHistorial()
+        {
+            if (ComputadoraEliminar != null)
+            {
+                servidor.EliminarComputadoraHistorial(ComputadoraEliminar);
+            }
+            CancelarEliminar();
+        }
+        private void VerEliminarComputadoraHistorial()
+        {
+            if (ComputadoraEliminar != null)
+            {
+                Eliminar = true;
+                OnPropertyChanged(nameof(ComputadoraEliminar));
+                OnPropertyChanged(nameof(Eliminar));
+            }
         }
         private void SeleccionarLaboratorio(LaboratorioModel? lab)
         {
@@ -121,7 +155,7 @@ namespace MonitorServer.ViewModels
         public void ActualizarLaboratorios()
         {
             Laboratorios.Clear();
-            var laboratorios = ListaComputadoras.Where(x=>x.Conectado == true).GroupBy(x => x.Laboratorio).Select(g => new LaboratorioModel { Nombre = g.Key.ToUpper(), Cantidad = g.Count() }).OrderBy(x=>x.Nombre);
+            var laboratorios = ListaComputadoras.Where(x=>x.UltimaConexion > DateTime.Now.AddDays(-7)).GroupBy(x => x.Laboratorio).Select(g => new LaboratorioModel { Nombre = g.Key.ToUpper(), Cantidad = g.Count() }).OrderBy(x=>x.Nombre);
             foreach (var lab in laboratorios)
             {
                 Laboratorios.Add(lab);
@@ -140,7 +174,7 @@ namespace MonitorServer.ViewModels
             if (!string.IsNullOrWhiteSpace(LaboratorioSeleccionado))
             {
                 Computadoras.Clear();
-                foreach (var pc in ListaComputadoras.Where(x => x.Laboratorio.ToUpper() == LaboratorioSeleccionado.ToUpper() && x.Conectado == true).OrderBy(x=>x.Nombre))
+                foreach (var pc in ListaComputadoras.Where(x => x.Laboratorio.ToUpper() == LaboratorioSeleccionado.ToUpper() && x.UltimaConexion > DateTime.Now.AddDays(-7)).OrderBy(x=>x.Nombre))
                 {
                     Computadoras.Add(pc);
                 }

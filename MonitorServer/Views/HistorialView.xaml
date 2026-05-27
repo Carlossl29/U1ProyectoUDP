@@ -24,6 +24,18 @@
                        VerticalAlignment="Center"
                        HorizontalAlignment="Left"/>
 
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                <Button Content="Eliminar"
+                        Width="110" Height="30"
+                        Cursor="Hand"
+                        Margin="0,0,10,0"
+                        Background="#CC0000"
+                        Foreground="White"
+                        FontSize="13"
+                        HorizontalAlignment="Center"
+                        Command="{Binding VerEliminarComputadoraHistorialCommand}"/>
+
                 <Button Content="Regresar"
                         Width="110" Height="30"
                         Cursor="Hand"
@@ -31,11 +43,13 @@
                         FontSize="13"
                         HorizontalAlignment="Right"
                         Command="{Binding RegresarLaboratoriosCommand}"/>
+                </StackPanel>
             </Grid>
         </Border>
 
         <DataGrid Grid.Row="1" HorizontalAlignment="Center"
               ItemsSource="{Binding Historial}"
+                  SelectedItem="{Binding ComputadoraEliminar}"
               AutoGenerateColumns="False"
               CanUserAddRows="False"
               IsReadOnly="True"
@@ -109,6 +123,71 @@
                 <Run Text="Total de equipos registrados: "/>
                 <Run Text="{Binding Historial.Count, Mode=OneWay}"/>
             </TextBlock>
+        </Border>
+        
+        <Border Background="#80000000"
+        Grid.RowSpan="3">
+
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Eliminar}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Eliminar}" Value="False">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid HorizontalAlignment="Center"
+          VerticalAlignment="Center">
+
+                <Border Width="360"
+                Background="White"
+                CornerRadius="0"
+                Padding="20">
+
+                    <StackPanel>
+
+                        <TextBlock Text="Confirmar eliminación"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#001F3F"
+                           Margin="0,0,0,10"/>
+
+                        <TextBlock FontSize="14"
+                           Foreground="#333"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,20">
+
+                    <Run Text="¿Eliminar la computadora con IP"/>
+                    <Run Text="{Binding ComputadoraEliminar.IP}"/>
+                    <Run Text="?"/>
+                        </TextBlock>
+
+                        <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+
+                            <Button Content="No"
+                            Width="90"
+                            Height="22"
+                            Margin="0,0,10,0"
+                            Command="{Binding CancelarEliminarCommand}"
+                            Foreground="Black"/>
+
+                            <Button Content="Sí, eliminar"
+                            Width="120"
+                            Command="{Binding EliminarComputadoraHistorialCommand}"
+                            Background="#CC0000"
+                            Foreground="White"/>
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>
