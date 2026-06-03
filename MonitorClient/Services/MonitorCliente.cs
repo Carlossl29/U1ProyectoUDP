@@ -23,25 +23,19 @@ namespace MonitorClient.Services
         public event Action? ContadorIniciado;
         public event Action<string>? ClienteEscuchando;
 
-        //public MonitorCliente()
-        //{
-        //    CargarIdentificador();
-        //}
+        public MonitorCliente()
+        {
+            CargarIdentificador();
+        }
 
         public void Conectar(string identificador)
         {
             identificador = identificador.Replace('|', '\0');
             var idSeparado = identificador.Split("-");
             bool internet = TieneInternet();
-
+            Cliente.EnableBroadcast = true;
             //IPEndPoint remoto = new IPEndPoint(ipServer, puertoServer);
-            IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
-            var comando = $"CONECTAR|{idSeparado[0].ToUpper()}|{idSeparado[1].ToUpper()}|{internet}";
-            byte[] buffer = Encoding.UTF8.GetBytes(comando);
 
-            Cliente.Send(buffer, buffer.Length, remoto);
-
-            IpServidor = remoto.Address;
 
             if (string.IsNullOrWhiteSpace(Identificador))
             {
@@ -56,6 +50,50 @@ namespace MonitorClient.Services
             Thread hilo = new(RecibirComandos);
             hilo.IsBackground = true;
             hilo.Start();
+
+            //IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
+            var comando = $"CONECTAR|{idSeparado[0].ToUpper()}|{idSeparado[1].ToUpper()}|{internet}";
+            byte[] buffer = Encoding.UTF8.GetBytes(comando);
+
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up || ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var props = ni.GetIPProperties();
+
+                foreach (var ua in props.UnicastAddresses)
+                {
+                    if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    if (ua.IPv4Mask == null)
+                        continue;
+
+                    byte[] ip = ua.Address.GetAddressBytes();
+                    byte[] mask = ua.IPv4Mask.GetAddressBytes();
+                    byte[] broadcast = new byte[4];
+
+                    for (int i = 0; i < 4; i++)
+                        broadcast[i] = (byte)(ip[i] | ~mask[i]);
+
+                    var broadcastIp = new IPAddress(broadcast);
+
+                    try
+                    {
+                        IPEndPoint remoto = new IPEndPoint(broadcastIp, puertoServer);
+                        Cliente.Send(buffer, buffer.Length, remoto);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error enviando broadcast a {broadcastIp}: {ex.Message}");
+                    }
+                }
+            }
+
+            //Cliente.Send(buffer, buffer.Length, remoto);
+
+            //IpServidor = remoto.Address;
         }
         public void RecibirComandos()
         {
@@ -111,20 +149,56 @@ namespace MonitorClient.Services
                 if (Identificador != null)
                 {
                     var idSeparado = Identificador.Split("-");
-                    IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
+                    //IPEndPoint remoto = new IPEndPoint(IPAddress.Broadcast, puertoServer);
                     var comando = $"APAGADO|{idSeparado[0].ToUpper()}|{idSeparado[1].ToUpper()}";
                     byte[] buffer = Encoding.UTF8.GetBytes(comando);
 
-                    Cliente.Send(buffer, buffer.Length, remoto);
-                }
+                    foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                    {
+                        if (ni.OperationalStatus != OperationalStatus.Up || ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                            continue;
 
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "shutdown",
-                    Arguments = "/s /t 0",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                });
+                        var props = ni.GetIPProperties();
+
+                        foreach (var ua in props.UnicastAddresses)
+                        {
+                            if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                                continue; 
+
+                            if (ua.IPv4Mask == null)
+                                continue;
+
+                            byte[] ip = ua.Address.GetAddressBytes();
+                            byte[] mask = ua.IPv4Mask.GetAddressBytes();
+                            byte[] broadcast = new byte[4];
+
+                            for (int i = 0; i < 4; i++)
+                                broadcast[i] = (byte)(ip[i] | ~mask[i]);
+
+                            var broadcastIp = new IPAddress(broadcast);
+
+                            try
+                            {
+                                IPEndPoint remoto = new IPEndPoint(broadcastIp, puertoServer);
+                                Cliente.Send(buffer, buffer.Length, remoto);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error enviando broadcast a {broadcastIp}: {ex.Message}");
+                            }
+                        }
+
+                        //Cliente.Send(buffer, buffer.Length, remoto);
+                    }
+
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "shutdown",
+                        Arguments = "/s /t 0",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+                }
             }
             catch (Exception ex)
             {

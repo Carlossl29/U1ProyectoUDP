@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection.Metadata;
 using System.Security.Policy;
@@ -222,10 +223,45 @@ namespace MonitorServer.Services
 
         public void DescubrirComputadoras()
         {
-            IPEndPoint broadcast = new IPEndPoint(IPAddress.Broadcast, 8888);  //aqui me quede
+            //IPEndPoint broadcast = new IPEndPoint(IPAddress.Broadcast, 8888);  //aqui me quede
             var comando = "DESCUBRIR";
             byte[] buffer = Encoding.UTF8.GetBytes(comando);
-            Server.Send(buffer, buffer.Length, broadcast);
+            //Server.Send(buffer, buffer.Length, broadcast);
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up || ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var props = ni.GetIPProperties();
+
+                foreach (var ua in props.UnicastAddresses)
+                {
+                    if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    if (ua.IPv4Mask == null)
+                        continue;
+
+                    byte[] ip = ua.Address.GetAddressBytes();
+                    byte[] mask = ua.IPv4Mask.GetAddressBytes();
+                    byte[] broadcastBytes = new byte[4];
+
+                    for (int i = 0; i < 4; i++)
+                        broadcastBytes[i] = (byte)(ip[i] | ~mask[i]);
+
+                    var broadcastIp = new IPAddress(broadcastBytes);
+
+                    try
+                    {
+                        IPEndPoint remoto = new IPEndPoint(broadcastIp, 8888);
+                        Server.Send(buffer, buffer.Length, remoto);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error enviando DESCUBRIR a {broadcastIp}: {ex.Message}");
+                    }
+                }
+            }
         }
 
         public IEnumerable<ComputadoraModel> GetHistorial()
